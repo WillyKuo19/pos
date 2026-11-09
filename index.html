@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="POS">
+<meta name="theme-color" content="#1f6f5c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>小店 POS</title>
+<style>
+:root{
+  --ink:#16201d; --muted:#5f6b67; --line:rgba(30,50,44,.12);
+  --brand:#1f7a63; --brand2:#2a9b7e; --brand-ink:#fff; --brand-soft:rgba(42,155,126,.16);
+  --warn:#d07a1c; --warn-soft:rgba(240,160,70,.22); --bad:#c0392f; --bad-soft:rgba(220,80,70,.14);
+  --busy:#2f62b0; --busy-soft:rgba(80,130,220,.2);
+  --glass:rgba(255,255,255,.52); --glass-hi:rgba(255,255,255,.74); --glass-edge:rgba(255,255,255,.75);
+  --glass-shadow:0 10px 30px rgba(24,48,40,.10),0 1px 2px rgba(24,48,40,.06),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 1px rgba(255,255,255,.35);
+  --blur:blur(22px) saturate(185%);
+  --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.22,1,.36,1);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;color:var(--ink);
+  font:16px/1.4 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+body{background:
+  radial-gradient(60vw 60vw at 8% 5%,rgba(120,205,175,.55),transparent 60%),
+  radial-gradient(50vw 50vw at 95% 0%,rgba(250,196,150,.55),transparent 60%),
+  radial-gradient(60vw 60vw at 80% 100%,rgba(150,180,240,.5),transparent 60%),
+  radial-gradient(40vw 40vw at 20% 95%,rgba(240,170,200,.35),transparent 60%),
+  #eef1ee;background-attachment:fixed}
+input,textarea,select{-webkit-user-select:text;user-select:text;font:inherit;color:inherit}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
+
+/* ---------- 玻璃材質 ---------- */
+.glass,header.top,.btn,.tabs button,.item,.ticket,.floor,.tbl,.box,.card,.side,.chip,.mini,.dlg,.keypad button,.qty button,.catrow,.fld input,.fld select,.fld textarea,.disp,.toast{
+  background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+/* 光澤：左上高光 */
+.btn,.tabs button,.item,.chip,.mini,.keypad button,.qty button,.tbl,.card{position:relative;overflow:hidden;isolation:isolate}
+.btn::before,.tabs button::before,.item::before,.chip::before,.mini::before,.keypad button::before,.qty button::before,.tbl::before,.card::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:linear-gradient(140deg,rgba(255,255,255,.75) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 70%,rgba(255,255,255,.25) 100%)}
+/* 按壓：彈性縮放 */
+.btn,.tabs button,.item,.chip,.mini,.keypad button,.qty button,.side button,header.top nav button,.catrow,.switch{
+  transition:transform .45s var(--spring),background-color .3s var(--ease),color .3s var(--ease),box-shadow .3s var(--ease),opacity .3s}
+.btn:active,.tabs button:active,.item:active,.chip:active,.mini:active,.keypad button:active,.qty button:active,.side button:active,header.top nav button:active,.catrow:active{
+  transform:scale(.94);transition-duration:.12s}
+
+#app{display:flex;flex-direction:column;height:100%;padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 12px);gap:10px}
+header.top{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 18px;border-radius:999px;view-transition-name:top;flex-shrink:0}
+header.top .shop{font-weight:800;font-size:18px;margin-right:10px;letter-spacing:.5px}
+header.top nav{position:relative;display:flex;gap:2px;padding:4px;border-radius:999px;background:rgba(255,255,255,.35);box-shadow:inset 0 1px 3px rgba(20,40,34,.12)}
+header.top nav button{position:relative;z-index:1;padding:9px 20px;border-radius:999px;color:var(--muted);font-weight:700}
+header.top nav button.on{color:#fff}
+.lens{position:absolute;z-index:0;border-radius:999px;pointer-events:none;
+  transition:left .55s var(--spring),width .55s var(--spring),top .55s var(--spring),height .55s var(--spring);
+  background:linear-gradient(180deg,rgba(52,170,138,.95),rgba(26,112,90,.95));
+  box-shadow:0 6px 16px rgba(31,122,99,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 4px rgba(0,0,0,.12)}
+nav .lens{view-transition-name:navlens}
+.lens.dark{background:linear-gradient(180deg,rgba(40,52,48,.92),rgba(18,26,23,.92));box-shadow:0 6px 16px rgba(10,20,16,.25),inset 0 1px 0 rgba(255,255,255,.3)}
+header.top .right{margin-left:auto;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px;padding-right:10px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:#aaa;margin-right:6px;transition:background .3s}
+.dot.ok{background:#22a35d;box-shadow:0 0 0 4px rgba(34,163,93,.18)}.dot.no{background:var(--bad);box-shadow:0 0 0 4px rgba(192,57,47,.18)}
+main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;view-transition-name:main}
+.scroll{overflow:auto;-webkit-overflow-scrolling:touch}
+.btn{padding:11px 18px;border-radius:14px;font-weight:700;white-space:nowrap}
+.btn.pri,.btn.warn,.chip.on,.switch.on{color:#fff;border-color:rgba(255,255,255,.35)}
+.btn.pri{background:linear-gradient(180deg,rgba(52,170,138,.95),rgba(26,112,90,.95));box-shadow:0 8px 20px rgba(31,122,99,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn.warn{background:linear-gradient(180deg,rgba(240,155,60,.95),rgba(205,115,25,.95));box-shadow:0 8px 20px rgba(208,122,28,.3),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn.bad{color:var(--bad)}
+.btn.big{padding:17px 22px;font-size:18px;border-radius:18px}
+.btn:disabled{opacity:.38;filter:saturate(.4)}
+.muted{color:var(--muted)}
+.tabs{position:relative;display:flex;gap:8px;min-width:0;padding:4px 2px 10px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{position:relative;z-index:1;padding:9px 18px;border-radius:999px;font-weight:700;white-space:nowrap;transition:color .35s var(--ease),transform .45s var(--spring)}
+.tabs button.on{color:#fff;background:transparent;border-color:transparent;box-shadow:none}
+.tabs button.on::before{opacity:0}
+.tabs .lens{z-index:0}
+
+/* ---------- 桌位圖 ---------- */
+.floorwrap{flex:1;min-height:0;display:flex;flex-direction:column}
+.floorbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.floor{position:relative;border-radius:24px;overflow:hidden;touch-action:none;
+  background-color:rgba(255,255,255,.4);background-image:radial-gradient(rgba(30,60,50,.18) 1px,transparent 1.2px);background-size:22px 22px}
+.tbl{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;
+  font-weight:800;text-align:center;line-height:1.15;padding:4px;container-type:size;
+  transition:transform .45s var(--spring),box-shadow .3s,background-color .3s}
+.tbl.round{border-radius:50%}
+.tbl .nm{font-size:clamp(11px,30cqmin,30px)}
+.tbl .sub{font-size:clamp(9px,13cqmin,13px);font-weight:700;margin-top:2px;opacity:.9}
+.tbl.busy{background:var(--busy-soft);color:var(--busy);border-color:rgba(120,160,235,.8)}
+.tbl.unsent{background:var(--warn-soft);color:#93520c;border-color:rgba(240,170,90,.9)}
+.tbl.unsent::after{content:"";position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--warn);animation:pulse 1.6s infinite}
+.tbl[data-act=openTable]:active{transform:scale(.93)}
+.tbl.sel{box-shadow:0 0 0 3px var(--brand2),0 12px 28px rgba(31,122,99,.3),inset 0 1px 0 #fff;z-index:5}
+.tbl.edit{cursor:grab}
+.tbl.dragging{transform:scale(1.06);box-shadow:0 22px 40px rgba(20,40,34,.25),inset 0 1px 0 #fff;z-index:9;transition:transform .3s var(--spring)}
+.rh{position:absolute;right:-2px;bottom:-2px;width:34px;height:34px;border-radius:50%;z-index:6;touch-action:none;cursor:nwse-resize;
+  background:linear-gradient(180deg,rgba(52,170,138,.95),rgba(26,112,90,.95));border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.25);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:900}
+.tbl.round .rh{right:6%;bottom:6%}
+.legend{display:flex;gap:16px;align-items:center;padding:0 4px 8px;font-size:13px;color:var(--muted);flex-shrink:0}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:5px;border:1.5px solid #fff;background:var(--glass-hi);vertical-align:-2px;margin-right:5px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.legend .b{background:#b7cdf1}.legend .u{background:#f6cf9f}
+.range{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.range span{width:44px;font-weight:700;color:var(--muted);font-size:14px}
+.range b{width:42px;text-align:right;font-size:14px}
+input[type=range]{flex:1;accent-color:var(--brand2);height:28px}
+
+/* ---------- 點餐 ---------- */
+.order{flex:1;min-height:0;display:grid;grid-template-columns:1fr 400px;gap:12px}
+.menu{display:flex;flex-direction:column;min-height:0}
+.items{flex:1;padding:4px 2px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-content:start}
+.item{border-radius:var(--r);padding:16px 14px;text-align:left;min-height:92px;display:flex;flex-direction:column;justify-content:space-between}
+.item .n{font-weight:800;font-size:17px}
+.item .p{color:var(--muted);font-weight:700}
+.item.out{opacity:.45}
+.item.out .p::after{content:"　售完";color:var(--bad)}
+.ticket{display:flex;flex-direction:column;min-height:0;border-radius:24px;overflow:hidden;background:var(--glass-hi)}
+.ticket .head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.ticket .head .t{font-size:24px;font-weight:900}
+.lines{flex:1;padding:6px 0}
+.line{display:flex;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);align-items:flex-start}
+.line .info{flex:1;min-width:0}
+.line .ln{font-weight:800}
+.line .lo{font-size:13px;color:var(--muted)}
+.line .lp{font-weight:800;min-width:64px;text-align:right}
+.line.sent .ln::after{content:"已送";font-size:11px;font-weight:800;background:rgba(30,50,44,.08);color:var(--muted);border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.line.new{background:rgba(255,236,205,.45)}
+.line.pop{animation:pop .55s var(--spring)}
+.qty{display:flex;align-items:center;gap:5px}
+.qty button{width:36px;height:36px;border-radius:12px;font-weight:800;font-size:18px}
+.qty span{min-width:24px;text-align:center;font-weight:800}
+.ticket .foot{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.sum{display:flex;justify-content:space-between;font-size:21px;font-weight:900}
+.row{display:flex;gap:10px}.row>*{flex:1}.row>[style*="flex:0"]{flex:0 0 auto!important}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
+/* ---------- 對話框 ---------- */
+.mask{position:fixed;inset:0;background:rgba(20,34,30,.22);-webkit-backdrop-filter:blur(8px) saturate(140%);backdrop-filter:blur(8px) saturate(140%);
+  display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;animation:fadeIn .3s var(--ease) both}
+.mask.out{animation:fadeOut .22s var(--ease) both}
+.dlg{border-radius:28px;width:min(560px,100%);max-height:92vh;display:flex;flex-direction:column;background:rgba(255,255,255,.72);
+  -webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%);
+  box-shadow:0 30px 70px rgba(10,30,24,.28),inset 0 1px 0 #fff;animation:dlgIn .5s var(--spring) both}
+.mask.out .dlg{animation:dlgOut .22s var(--ease) both}
+.dlg.wide{width:min(840px,100%)}
+.dlg h3{margin:0;padding:18px 22px 12px;font-size:20px;font-weight:900}
+.dlg .body{padding:8px 22px 16px;overflow:auto}
+.dlg .acts{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px 18px;flex-wrap:wrap}
+.grp{margin-bottom:16px}
+.grp .gt{font-weight:800;margin-bottom:8px}
+.grp .gt small{font-weight:700;color:var(--muted);margin-left:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:10px 16px;border-radius:999px;font-weight:700}
+.chip.on{background:linear-gradient(180deg,rgba(52,170,138,.95),rgba(26,112,90,.95));box-shadow:0 6px 14px rgba(31,122,99,.28),inset 0 1px 0 rgba(255,255,255,.5);transform:scale(1.03)}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fld label{font-weight:700;font-size:14px;color:var(--muted)}
+.fld input,.fld select,.fld textarea{padding:12px 14px;border-radius:14px;width:100%;outline:none;transition:box-shadow .25s}
+.fld input:focus,.fld select:focus{box-shadow:0 0 0 3px rgba(42,155,126,.35),var(--glass-shadow)}
+.fld .hint{font-size:13px;color:var(--muted)}
+.check{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:700}
+.check input{width:22px;height:22px;accent-color:var(--brand2)}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);padding:13px 22px;border-radius:999px;z-index:99;font-weight:800;max-width:90vw;
+  background:rgba(22,32,29,.78);color:#fff;border-color:rgba(255,255,255,.2);animation:toastIn .5s var(--spring) both}
+.toast.bad{background:rgba(192,57,47,.85)}
+.toast.out{animation:toastOut .25s var(--ease) both}
+
+/* ---------- 結帳 ---------- */
+.co{display:grid;grid-template-columns:1fr 300px;gap:22px}
+.co .bill div{display:flex;justify-content:space-between;padding:4px 0}
+.co .bill .tot{font-size:28px;font-weight:900;border-top:2px solid var(--ink);margin-top:8px;padding-top:10px}
+.co .bill .chg{font-size:23px;font-weight:900;color:var(--brand)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.keypad button{padding:16px 0;font-size:22px;font-weight:800;border-radius:16px}
+.disp{font-size:30px;font-weight:900;text-align:right;padding:8px 14px;border-radius:16px;margin-bottom:10px;min-height:58px;border:2px solid rgba(42,155,126,.6)}
+
+/* ---------- 報表、後台 ---------- */
+.page{flex:1;padding:2px;display:flex;flex-direction:column;gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.card{border-radius:var(--r);padding:14px 18px}
+.card .k{color:var(--muted);font-size:14px;font-weight:700}
+.card .v{font-size:27px;font-weight:900;margin-top:4px}
+.box{border-radius:22px;padding:16px 18px;background:var(--glass-hi)}
+.box h4{margin:0 0 10px;font-size:17px;font-weight:900}
+table.t{width:100%;border-collapse:collapse}
+table.t th,table.t td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+table.t th{color:var(--muted);font-size:13px;font-weight:800}
+table.t td.n,table.t th.n{text-align:right}
+tr.void td{color:#aaa;text-decoration:line-through}
+.admin{flex:1;min-height:0;display:grid;grid-template-columns:210px 1fr;gap:12px}
+.side{border-radius:24px;padding:10px;display:flex;flex-direction:column;gap:4px;position:relative;align-self:start}
+.side button{position:relative;z-index:1;text-align:left;padding:13px 16px;border-radius:14px;font-weight:700;color:var(--muted)}
+.side button.on{color:#fff}
+.cats{display:flex;flex-direction:column;gap:8px}
+.catrow{display:flex;align-items:center;gap:6px;padding:9px 10px 9px 14px;border-radius:14px}
+.catrow.on{background:var(--brand-soft);border-color:rgba(42,155,126,.5)}
+.catrow .cn{flex:1;font-weight:800}
+.mini{padding:7px 12px;border-radius:10px;font-size:14px;font-weight:700}
+.mini:disabled{opacity:.35}
+.switch{position:relative;width:50px;height:30px;border-radius:999px;background:rgba(30,50,44,.18);flex-shrink:0;box-shadow:inset 0 1px 3px rgba(0,0,0,.15)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);transition:left .45s var(--spring),width .3s var(--ease)}
+.switch:active::after{width:30px}
+.switch.on{background:linear-gradient(180deg,#34aa8a,#1a705a)}.switch.on::after{left:23px}
+.switch.on:active::after{left:17px}
+.optrow{display:grid;grid-template-columns:1fr 110px 44px;gap:8px;margin-bottom:8px}
+.optrow input{padding:10px 12px;border-radius:12px;border:1px solid var(--glass-edge);background:var(--glass);box-shadow:var(--glass-shadow)}
+.preview{background:#fff;border:1px dashed #bbb;padding:14px 10px;font-family:"SF Mono",Menlo,Consolas,"PingFang TC",monospace;font-size:12px;line-height:1.35;white-space:pre;overflow-x:auto;margin:0 auto;width:max-content;min-width:300px;border-radius:6px}
+.preview .w2{font-size:22px;font-weight:800}
+.preview .h2{font-size:12px;transform:scaleY(1.6);transform-origin:left top;display:inline-block;margin-bottom:6px}
+.preview .b{font-weight:800}
+.preview .inv{background:#000;color:#fff}
+.preview .cut{display:block;border-top:2px dashed #999;margin-top:6px;color:#999;text-align:center;font-size:10px}
+.preview .c{display:block;text-align:center}
+
+/* ---------- 動畫 ---------- */
+@keyframes fadeIn{from{opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes dlgIn{from{opacity:0;transform:translateY(24px) scale(.92)}}
+@keyframes dlgOut{to{opacity:0;transform:translateY(10px) scale(.96)}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,30px) scale(.9)}}
+@keyframes toastOut{to{opacity:0;transform:translate(-50%,10px) scale(.95)}}
+@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:none;opacity:1}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(208,122,28,.5)}50%{box-shadow:0 0 0 6px rgba(208,122,28,0)}}
+@keyframes enter{from{opacity:0;transform:translateY(14px) scale(.985)}}
+@keyframes leave{to{opacity:0;transform:translateY(-6px) scale(.99)}}
+main.enter{animation:enter .45s var(--ease) both}
+::view-transition-old(main){animation:leave .2s var(--ease) both}
+::view-transition-new(main){animation:enter .45s var(--ease) both}
+::view-transition-group(navlens){animation-duration:.55s;animation-timing-function:var(--spring)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* =========================================================
+   小店 POS v1 —— 單台 iPad、資料存在本機、WebPRNT 區網出單
+   ========================================================= */
+const KEY = 'pos.v1';
+const COLS = 48; // 80mm 紙、標準字型一行 48 個半形字
+const $ = (s, el = document) => el.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = n => '$' + Math.round(n).toLocaleString('en-US');
+const pad2 = n => String(n).padStart(2, '0');
+const dayKey = t => { const d = new Date(t); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const fmtTime = t => { const d = new Date(t); return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const hm = t => { const d = new Date(t); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+
+/* ---------------- 資料 ---------------- */
+function seed() {
+  const c1 = uid(), c2 = uid(), c3 = uid();
+  const gSpicy = uid(), gAdd = uid(), gIce = uid(), gSugar = uid();
+  const a1 = uid();
+  const tables = [];
+  const pos = [[8, 12], [26, 12], [44, 12], [8, 50], [26, 50], [44, 50]];
+  pos.forEach(([x, y], i) => tables.push({ id: uid(), areaId: a1, name: 'A' + (i + 1), x, y, shape: i === 2 ? 'rect' : 'sq' }));
+  tables.push({ id: uid(), areaId: a1, name: 'B1', x: 72, y: 15, shape: 'round' });
+  tables.push({ id: uid(), areaId: a1, name: 'B2', x: 72, y: 55, shape: 'round' });
+  return {
+    v: 1,
+    settings: { shopName: '我的小店', printerIp: '', https: true, codepage: 'utf8', openDrawer: true, kitchenBig: true },
+    categories: [{ id: c1, name: '主餐' }, { id: c2, name: '小菜' }, { id: c3, name: '飲料' }],
+    optionGroups: [
+      { id: gSpicy, name: '辣度', required: true, multi: false, options: [{ name: '不辣', price: 0 }, { name: '小辣', price: 0 }, { name: '中辣', price: 0 }, { name: '大辣', price: 0 }] },
+      { id: gAdd, name: '加料', required: false, multi: true, options: [{ name: '加蛋', price: 15 }, { name: '加麵', price: 20 }, { name: '加肉', price: 40 }] },
+      { id: gIce, name: '冰塊', required: true, multi: false, options: [{ name: '正常冰', price: 0 }, { name: '少冰', price: 0 }, { name: '去冰', price: 0 }, { name: '熱', price: 0 }] },
+      { id: gSugar, name: '甜度', required: true, multi: false, options: [{ name: '全糖', price: 0 }, { name: '半糖', price: 0 }, { name: '微糖', price: 0 }, { name: '無糖', price: 0 }] },
+    ],
+    items: [
+      { id: uid(), catId: c1, name: '紅燒牛肉麵', price: 180, soldOut: false, groups: [gSpicy, gAdd] },
+      { id: uid(), catId: c1, name: '番茄牛肉麵', price: 190, soldOut: false, groups: [gAdd] },
+      { id: uid(), catId: c1, name: '炸醬麵', price: 110, soldOut: false, groups: [gSpicy, gAdd] },
+      { id: uid(), catId: c1, name: '排骨飯', price: 130, soldOut: false, groups: [] },
+      { id: uid(), catId: c2, name: '燙青菜', price: 50, soldOut: false, groups: [] },
+      { id: uid(), catId: c2, name: '滷豆干', price: 40, soldOut: false, groups: [] },
+      { id: uid(), catId: c2, name: '皮蛋豆腐', price: 50, soldOut: false, groups: [] },
+      { id: uid(), catId: c3, name: '紅茶', price: 35, soldOut: false, groups: [gIce, gSugar] },
+      { id: uid(), catId: c3, name: '冬瓜檸檬', price: 45, soldOut: false, groups: [gIce, gSugar] },
+    ],
+    areas: [{ id: a1, name: '一樓' }],
+    tables,
+    open: {},      // tableId -> 進行中的訂單
+    closed: [],    // 已結帳訂單
+    seq: { day: '', n: 0 },
+    lastBackup: 0,
+  };
+}
+function load() {
+  try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) { }
+  return seed();
+}
+// 桌子尺寸以「畫布百分比」儲存（畫布固定 16:10），各種螢幕看到的排列一致
+const FLOOR_RATIO = 1.6;
+const DEF_SIZE = { sq: [9.6, 15.4], rect: [17, 15.4], round: [10, 16] };
+function migrate(d) {
+  (d.tables || []).forEach(t => { if (t.w == null) { const s = DEF_SIZE[t.shape] || DEF_SIZE.sq; t.w = s[0]; t.h = s[1]; } });
+  return d;
+}
+let S = migrate(load());
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('儲存失敗：裝置空間可能不足，請先匯出備份', true); }
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { });
+
+const V = { screen: 'floor', area: S.areas[0]?.id, tableId: null, cat: null, admin: 'menu', adminCat: null, editTable: null, reportDay: dayKey(Date.now()) };
+
+const itemById = id => S.items.find(i => i.id === id);
+const groupById = id => S.optionGroups.find(g => g.id === id);
+const tableById = id => S.tables.find(t => t.id === id);
+const lineTotal = l => (l.price + l.opts.reduce((a, o) => a + o.price, 0)) * l.qty;
+const orderSubtotal = o => o.lines.reduce((a, l) => a + lineTotal(l), 0);
+function discountOf(o, sub) {
+  if (!o.disc || !o.disc.v) return 0;
+  const d = o.disc.type === 'pct' ? Math.round(sub * o.disc.v / 100) : o.disc.v;
+  return Math.min(sub, Math.max(0, d));
+}
+function nextNo() {
+  const k = dayKey(Date.now());
+  if (S.seq.day !== k) S.seq = { day: k, n: 0 };
+  S.seq.n++;
+  return S.seq.n;
+}
+function getOrder(tableId, create) {
+  if (!S.open[tableId] && create) S.open[tableId] = { id: uid(), no: nextNo(), tableId, openedAt: Date.now(), lines: [], disc: null, sendCount: 0 };
+  return S.open[tableId];
+}
+
+/* ---------------- 共用 UI ---------------- */
+let toastTimer;
+function toast(msg, bad) {
+  document.querySelectorAll('.toast').forEach(e => e.remove());
+  const d = document.createElement('div'); d.className = 'toast' + (bad ? ' bad' : ''); d.textContent = msg;
+  document.body.appendChild(d); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 260); }, 2400);
+}
+function modal(title, body, buttons, opts = {}) {
+  return new Promise(resolve => {
+    const m = document.createElement('div'); m.className = 'mask';
+    m.innerHTML = `<div class="dlg ${opts.wide ? 'wide' : ''}"><h3>${h(title)}</h3><div class="body">${body}</div>
+      <div class="acts">${buttons.map(b => `<button class="btn ${b.cls || ''}" data-k="${b.k}">${h(b.t)}</button>`).join('')}</div></div>`;
+    document.body.appendChild(m);
+    let done = false;
+    const close = k => { if (done) return; done = true; m.classList.add('out'); setTimeout(() => m.remove(), 230); resolve(k); };
+    m.addEventListener('click', e => {
+      const b = e.target.closest('[data-k]');
+      if (b) { if (opts.onBtn && opts.onBtn(b.dataset.k, m) === false) return; close(b.dataset.k); }
+      else if (e.target === m && opts.dismiss !== false) close(null);
+    });
+    if (opts.onOpen) opts.onOpen(m, close);
+  });
+}
+const ask = (title, text, okText = '確定', cls = 'pri') =>
+  modal(title, `<p style="margin:0">${text}</p>`, [{ k: 'no', t: '取消' }, { k: 'ok', t: okText, cls }]).then(k => k === 'ok');
+function prompt2(title, label, value = '', type = 'text') {
+  return modal(title, `<div class="fld"><label>${h(label)}</label><input id="p2" type="${type}" value="${h(value)}"></div>`,
+    [{ k: 'no', t: '取消' }, { k: 'ok', t: '確定', cls: 'pri' }],
+    { onOpen: m => setTimeout(() => $('#p2', m).focus(), 50), onBtn: (k, m) => { prompt2.v = $('#p2', m).value.trim(); } })
+    .then(k => k === 'ok' ? prompt2.v : null);
+}
+
+/* ---------------- 出單（Star WebPRNT） ---------------- */
+// 字寬：中日韓全形字算 2 格
+function cw(s) { let w = 0; for (const ch of s) { const c = ch.codePointAt(0); w += (c >= 0x2E80 && !(c >= 0xFF61 && c <= 0xFF9F)) ? 2 : 1; } return w; }
+function wrap(s, w) {
+  const out = []; let cur = '', x = 0;
+  for (const ch of s) { const k = cw(ch); if (x + k > w) { out.push(cur); cur = ''; x = 0; } cur += ch; x += k; }
+  if (cur || !out.length) out.push(cur); return out;
+}
+const padR = (s, w) => s + ' '.repeat(Math.max(0, w - cw(s)));
+const padL = (s, w) => ' '.repeat(Math.max(0, w - cw(s))) + s;
+function lr(l, r, cols = COLS) { // 左右對齊；左邊太長就換行
+  const rw = cw(r), lw = cols - rw - 1, ls = wrap(l, lw);
+  return ls.map((s, i) => i === ls.length - 1 ? padR(s, lw) + ' ' + r : s).join('\n');
+}
+const rule = (ch = '-') => ch.repeat(COLS);
+
+// 出單工作：[{t:'text',s,w,h,b,inv}, {t:'align',v}, {t:'feed',n}, {t:'cut'}, {t:'drawer'}]
+const J = {
+  txt: (s, o = {}) => ({ t: 'text', s, w: o.w || 1, h: o.h || 1, b: !!o.b, inv: !!o.inv }),
+  align: v => ({ t: 'align', v }), feed: n => ({ t: 'feed', n }), cut: () => ({ t: 'cut' }), drawer: () => ({ t: 'drawer' }),
+};
+const xesc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+function toXML(job) {
+  const cp = S.settings.codepage ? ` codepage="${xesc(S.settings.codepage)}"` : '';
+  let x = '<root><initialization/>';
+  for (const g of job) {
+    if (g.t === 'align') x += `<alignment position="${g.v}"/>`;
+    else if (g.t === 'text') x += `<text${cp} width="${g.w}" height="${g.h}" emphasis="${g.b}" invert="${g.inv}">${xesc(g.s + '\n').replace(/\n/g, '&#10;')}</text>`;
+    else if (g.t === 'feed') x += `<feed line="${g.n}"/>`;
+    else if (g.t === 'cut') x += '<cut type="partial" feed="true"/>';
+    else if (g.t === 'drawer') x += '<peripheral channel="1" on="200" off="200"/>';
+  }
+  return x + '</root>';
+}
+function toPreview(job) {
+  let align = 'left', out = '';
+  for (const g of job) {
+    if (g.t === 'align') align = g.v;
+    else if (g.t === 'text') {
+      const cls = [g.w > 1 ? 'w2' : '', g.h > 1 && g.w === 1 ? 'h2' : '', g.b ? 'b' : '', g.inv ? 'inv' : ''].join(' ');
+      out += `<span class="${align === 'center' ? 'c ' : ''}${cls}">${h(g.s)}</span>\n`;
+    } else if (g.t === 'feed') out += '\n'.repeat(Math.min(g.n, 2));
+    else if (g.t === 'cut') out += '<span class="cut">✂ 切紙</span>';
+    else if (g.t === 'drawer') out += '<span class="c muted">［開錢櫃］</span>\n';
+  }
+  return `<div class="preview">${out}</div>`;
+}
+async function sendWebPrnt(req) {
+  const { printerIp, https } = S.settings;
+  const url = `${https ? 'https' : 'http'}://${printerIp}/StarWebPRNT/SendMessage`;
+  const soap = '<?xml version="1.0" encoding="utf-8"?>\n<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>' +
+    '<StarWebPrint xmlns="http://www.star-m.jp" xmlns:i="http://www.w3.org/2001/XMLSchema-instance"><Request>' +
+    xesc(req) + '</Request></StarWebPrint></s:Body></s:Envelope>';
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 10000);
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/xml; charset=UTF-8' }, body: soap, signal: ac.signal });
+    const txt = await res.text();
+    const ok = /<success>\s*true\s*<\/success>/i.test(txt);
+    printerState(true);
+    if (ok) return { ok: true };
+    const code = (/<code>(.*?)<\/code>/i.exec(txt) || [])[1] || ('HTTP ' + res.status);
+    return { ok: false, msg: `出單機回應錯誤（${code}）：請檢查是否缺紙、上蓋沒蓋好。` };
+  } catch (e) {
+    printerState(false);
+    return { ok: false, msg: e.name === 'AbortError' ? '連線逾時：請確認出單機電源、IP，以及 iPad 和出單機連在同一個網路。'
+      : '連不到出單機：請確認 IP 正確，並且 iPad 已信任出單機的 HTTPS 憑證（見「設定」頁說明）。' };
+  } finally { clearTimeout(tm); }
+}
+let printerOK = null;
+function printerState(v) { printerOK = v; const d = $('#pdot'); if (d) d.className = 'dot ' + (v ? 'ok' : 'no'); }
+function showPreview(job, title) {
+  return modal(title, toPreview(job), [{ k: 'ok', t: '關閉', cls: 'pri' }]);
+}
+// 回傳 true = 已印出（或預覽模式）
+async function printJob(job, label) {
+  if (!S.settings.printerIp) { await showPreview(job, label + '（尚未設定出單機，先顯示預覽）'); return true; }
+  for (; ;) {
+    const r = await sendWebPrnt(toXML(job));
+    if (r.ok) return true;
+    const k = await modal('出單失敗', `<p style="margin-top:0"><b>${h(label)}</b> 沒有印出來。</p><p class="muted">${h(r.msg)}</p>`,
+      [{ k: 'view', t: '看單據內容' }, { k: 'skip', t: '略過' }, { k: 'retry', t: '重試', cls: 'pri' }], { dismiss: false });
+    if (k === 'retry') continue;
+    if (k === 'view') await showPreview(job, label);
+    return false;
+  }
+}
+
+function optText(l) { return l.opts.map(o => o.name).join(' / '); }
+function kitchenJob(order, lines, kind) {
+  const t = tableById(order.tableId);
+  const big = S.settings.kitchenBig;
+  const job = [J.align('center')];
+  job.push(J.txt(` 桌號 ${t ? t.name : '?'} `, { w: big ? 3 : 2, h: big ? 3 : 2, b: true, inv: true }));
+  job.push(J.feed(1));
+  if (kind) job.push(J.txt(`【${kind}】`, { w: 2, h: 2, b: true }));
+  job.push(J.align('left'));
+  job.push(J.txt(lr(`單號 #${pad2(order.no)}`, fmtTime(Date.now()))));
+  job.push(J.txt(rule('=')));
+  for (const l of lines) {
+    job.push(J.txt(lr(l.name, 'x' + l.qty, COLS), { h: 2, b: true }));
+    if (l.opts.length) job.push(J.txt('  ' + optText(l)));
+    if (l.note) job.push(J.txt('  ※ ' + l.note, { b: true }));
+  }
+  job.push(J.txt(rule('=')));
+  job.push(J.feed(2), J.cut());
+  return job;
+}
+function receiptJob(rec, reprint) {
+  const t = tableById(rec.tableId);
+  const job = [J.align('center'), J.txt(S.settings.shopName || '收據', { w: 2, h: 2, b: true })];
+  if (reprint) job.push(J.txt('（補印）'));
+  job.push(J.feed(1), J.align('left'));
+  job.push(J.txt(lr(`桌號 ${t ? t.name : rec.tableName || ''}`, `單號 #${pad2(rec.no)}`)));
+  job.push(J.txt(lr('時間', fmtTime(rec.closedAt))));
+  job.push(J.txt(rule()));
+  for (const l of rec.lines) {
+    job.push(J.txt(lr(l.name, `x${l.qty}  ${padL(money(lineTotal(l)), 8)}`)));
+    if (l.opts.length) job.push(J.txt('  ' + optText(l)));
+  }
+  job.push(J.txt(rule()));
+  job.push(J.txt(lr('小計', money(rec.subtotal))));
+  if (rec.discount) job.push(J.txt(lr('折扣', '-' + money(rec.discount))));
+  job.push(J.txt(lr('合計', money(rec.total), COLS / 2), { w: 2, h: 2, b: true }));
+  job.push(J.txt(rule()));
+  if (rec.pay.method === 'cash') {
+    job.push(J.txt(lr('付款方式', '現金')));
+    job.push(J.txt(lr('收現', money(rec.pay.received))));
+    job.push(J.txt(lr('找零', money(rec.pay.change)), { b: true }));
+  } else job.push(J.txt(lr('付款方式', '信用卡')));
+  job.push(J.feed(1), J.align('center'), J.txt('謝謝光臨'), J.feed(2), J.cut());
+  if (rec.pay.method === 'cash' && S.settings.openDrawer && !reprint) job.push(J.drawer());
+  return job;
+}
+
+/* ---------------- 畫面：外框 ---------------- */
+function render() {
+  const nav = [['floor', '桌位'], ['reports', '報表'], ['admin', '後台']];
+  const scr = V.screen === 'order' ? 'floor' : V.screen;
+  $('#app').innerHTML = `
+    <header class="top">
+      <span class="shop">${h(S.settings.shopName)}</span>
+      <nav data-lens="nav"><span class="lens"></span>${nav.map(([k, t]) => `<button class="${scr === k ? 'on' : ''}" data-act="go" data-v="${k}">${t}</button>`).join('')}</nav>
+      <div class="right">
+        <span><span id="pdot" class="dot ${printerOK === null ? '' : printerOK ? 'ok' : 'no'}"></span>${S.settings.printerIp ? '出單機 ' + h(S.settings.printerIp) : '預覽模式（未設定出單機）'}</span>
+        <span id="clock">${hm(Date.now())}</span>
+      </div>
+    </header>
+    <main id="main"></main>`;
+  ({ floor: renderFloor, order: renderOrder, reports: renderReports, admin: renderAdmin })[V.screen]();
+  afterRender();
+}
+function afterRender() { fitFloors(); glideAll(); }
+
+/* ---------- 液態玻璃的滑動指示（lens）與過場 ---------- */
+const lensPos = {};
+let inTransition = false;
+function glideAll() {
+  document.querySelectorAll('[data-lens]').forEach(box => {
+    const key = box.dataset.lens, lens = box.querySelector(':scope > .lens'), on = box.querySelector(':scope > .on');
+    if (!lens) return;
+    if (!on) { lens.style.opacity = 0; return; }
+    const to = { left: on.offsetLeft, top: on.offsetTop, width: on.offsetWidth, height: on.offsetHeight };
+    const from = lensPos[key];
+    const put = p => { lens.style.left = p.left + 'px'; lens.style.top = p.top + 'px'; lens.style.width = p.width + 'px'; lens.style.height = p.height + 'px'; };
+    lens.style.opacity = 1;
+    if (from && !inTransition && !reduceMotion) {
+      lens.style.transition = 'none'; put(from); lens.offsetWidth; lens.style.transition = ''; put(to);
+    } else put(to);
+    lensPos[key] = to;
+  });
+}
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 切換畫面：支援 View Transitions 的瀏覽器用原生過場，其餘用 CSS 動畫
+function navigate(fn) {
+  if (document.startViewTransition && !reduceMotion) {
+    const vt = document.startViewTransition(() => { inTransition = true; fn(); inTransition = false; });
+    vt.finished.catch(() => { });
+  } else {
+    fn(); const m = $('#main'); if (m && !reduceMotion) { m.classList.remove('enter'); m.offsetWidth; m.classList.add('enter'); }
+  }
+}
+function fitFloors() {
+  document.querySelectorAll('.floorbox').forEach(box => {
+    const f = box.querySelector('.floor'); if (!f) return;
+    const bw = box.clientWidth, bh = box.clientHeight;
+    const w = Math.min(bw, bh * FLOOR_RATIO);
+    f.style.width = w + 'px'; f.style.height = (w / FLOOR_RATIO) + 'px';
+  });
+}
+window.addEventListener('resize', () => { fitFloors(); glideAll(); });
+
+/* ---------------- 桌位圖 ---------------- */
+function tableTile(t, edit) {
+  const o = S.open[t.id];
+  let cls = 'tbl' + (t.shape === 'round' ? ' round' : '') + (edit ? ' edit' : '');
+  let sub = edit ? '' : '空桌';
+  if (o && o.lines.length && !edit) {
+    const unsent = o.lines.some(l => !l.sent);
+    cls += unsent ? ' unsent' : ' busy';
+    const mins = Math.floor((Date.now() - o.openedAt) / 60000);
+    sub = (unsent ? '未送單・' : '') + `${mins}分 ${money(orderSubtotal(o))}`;
+  }
+  if (edit && V.editTable === t.id) cls += ' sel';
+  const handle = edit && V.editTable === t.id ? '<span class="rh" title="拖曳縮放">⤡</span>' : '';
+  return `<div class="${cls}" data-act="${edit ? 'pickTable' : 'openTable'}" data-id="${t.id}"
+    style="left:${t.x}%;top:${t.y}%;width:${t.w}%;height:${t.h}%"><div class="nm">${h(t.name)}</div>${sub ? `<div class="sub">${sub}</div>` : ''}${handle}</div>`;
+}
+function areaTabs(act) {
+  if (!S.areas.find(a => a.id === V.area)) V.area = S.areas[0]?.id;
+  return S.areas.map(a => `<button class="${a.id === V.area ? 'on' : ''}" data-act="${act}" data-id="${a.id}">${h(a.name)}</button>`).join('');
+}
+function renderFloor() {
+  const tables = S.tables.filter(t => t.areaId === V.area);
+  const busy = Object.values(S.open).filter(o => o.lines.length).length;
+  $('#main').innerHTML = `
+    <div class="tabs" data-lens="area"><span class="lens dark"></span>${areaTabs('area')}<span style="margin-left:auto;align-self:center" class="muted">用餐中 ${busy} 桌</span></div>
+    <div class="legend"><span><i></i>空桌</span><span><i class="b"></i>用餐中</span><span><i class="u"></i>有品項未送單</span></div>
+    <div class="floorwrap"><div class="floorbox"><div class="floor" id="floor">${tables.map(t => tableTile(t, false)).join('') || '<div class="empty">這區還沒有桌子，到「後台 → 桌位圖」新增</div>'}</div></div></div>`;
+}
+
+/* ---------------- 點餐 ---------------- */
+function renderOrder() {
+  const t = tableById(V.tableId);
+  if (!t) { V.screen = 'floor'; return render(); }
+  if (!V.cat || !S.categories.find(c => c.id === V.cat)) V.cat = S.categories[0]?.id;
+  const o = getOrder(t.id, false);
+  const lines = o ? o.lines : [];
+  const items = S.items.filter(i => i.catId === V.cat);
+  const unsent = lines.filter(l => !l.sent).length;
+  const sub = o ? orderSubtotal(o) : 0;
+  setTimeout(() => { V.pop = null; });
+  $('#main').innerHTML = `
+  <div class="order">
+    <section class="menu">
+      <div class="tabs" data-lens="cat"><span class="lens dark"></span>${S.categories.map(c => `<button class="${c.id === V.cat ? 'on' : ''}" data-act="cat" data-id="${c.id}">${h(c.name)}</button>`).join('')}</div>
+      <div class="items scroll">${items.map(i => `<button class="item ${i.soldOut ? 'out' : ''}" data-act="addItem" data-id="${i.id}">
+        <span class="n">${h(i.name)}</span><span class="p">${money(i.price)}${i.groups.length ? ' ＋' : ''}</span></button>`).join('') || '<div class="empty">這個分類還沒有品項</div>'}</div>
+    </section>
+    <aside class="ticket">
+      <div class="head"><button class="btn" data-act="go" data-v="floor">‹ 桌位</button>
+        <span class="t">${h(t.name)}</span>${o ? `<span class="muted">#${pad2(o.no)}・${hm(o.openedAt)} 開桌</span>` : ''}
+        <span style="margin-left:auto"></span>${o && lines.length ? `<button class="mini" data-act="moveTable">換桌</button>` : ''}</div>
+      <div class="lines scroll">${lines.length ? lines.map(l => `
+        <div class="line ${l.sent ? 'sent' : 'new'}${l.id === V.pop ? ' pop' : ''}">
+          <div class="info"><div class="ln">${h(l.name)}</div>
+            ${l.opts.length ? `<div class="lo">${h(optText(l))}</div>` : ''}${l.note ? `<div class="lo">※ ${h(l.note)}</div>` : ''}
+            <div class="lo">${l.sent ? 'x' + l.qty : ''}</div></div>
+          ${l.sent ? `<button class="mini" data-act="voidLine" data-id="${l.id}">退菜</button>`
+            : `<div class="qty"><button data-act="qty" data-id="${l.id}" data-d="-1">−</button><span>${l.qty}</span><button data-act="qty" data-id="${l.id}" data-d="1">＋</button></div>`}
+          <div class="lp">${money(lineTotal(l))}</div>
+        </div>`).join('') : '<div class="empty">點左邊的品項開始點餐</div>'}</div>
+      <div class="foot">
+        <div class="sum"><span>小計</span><span>${money(sub)}</span></div>
+        <div class="row">
+          <button class="btn big warn" data-act="send" ${unsent ? '' : 'disabled'}>送單${unsent ? `（${unsent}）` : ''}</button>
+          <button class="btn big pri" data-act="checkout" ${lines.length ? '' : 'disabled'}>結帳</button>
+        </div>
+      </div>
+    </aside>
+  </div>`;
+}
+function addLine(item, opts, qty, note) {
+  const o = getOrder(V.tableId, true);
+  const key = item.id + '|' + opts.map(x => x.name).join(',') + '|' + note;
+  const same = o.lines.find(l => !l.sent && l.key === key);
+  if (same) { same.qty += qty; V.pop = same.id; }
+  else o.lines.push({ id: V.pop = uid(), key, itemId: item.id, name: item.name, price: item.price, opts, qty, note, sent: false });
+  save(); render();
+}
+async function pickOptions(item) {
+  const groups = item.groups.map(groupById).filter(Boolean);
+  const sel = {}; groups.forEach(g => sel[g.id] = []);
+  let qty = 1;
+  const body = () => groups.map(g => `<div class="grp"><div class="gt">${h(g.name)}<small>${g.required ? '必選' : '可不選'}${g.multi ? '・可複選' : ''}</small></div>
+    <div class="chips">${g.options.map((op, i) => `<button class="chip ${sel[g.id].includes(i) ? 'on' : ''}" data-g="${g.id}" data-i="${i}">${h(op.name)}${op.price ? ' +' + op.price : ''}</button>`).join('')}</div></div>`).join('') +
+    `<div class="grp"><div class="gt">數量</div><div class="qty"><button data-q="-1">−</button><span id="oq">${qty}</span><button data-q="1">＋</button></div></div>
+     <div class="fld"><label>備註（會印在廚房單）</label><input id="onote" placeholder="例如：不要蔥"></div>`;
+  const k = await modal(`${item.name}　${money(item.price)}`, `<div id="ob">${body()}</div>`, [{ k: 'no', t: '取消' }, { k: 'ok', t: '加入', cls: 'pri' }], {
+    onOpen: m => m.addEventListener('click', e => {
+      const c = e.target.closest('[data-g]'); const q = e.target.closest('[data-q]');
+      if (c) {
+        const g = groupById(c.dataset.g), i = +c.dataset.i, arr = sel[g.id];
+        if (g.multi) { const p = arr.indexOf(i); p >= 0 ? arr.splice(p, 1) : arr.push(i); }
+        else sel[g.id] = arr[0] === i && !g.required ? [] : [i];
+        c.parentElement.querySelectorAll('.chip').forEach((el, j) => el.classList.toggle('on', sel[g.id].includes(j)));
+      }
+      if (q) { qty = Math.max(1, qty + +q.dataset.q); $('#oq', m).textContent = qty; }
+    }),
+    onBtn: (k, m) => {
+      if (k !== 'ok') return;
+      const miss = groups.find(g => g.required && !sel[g.id].length);
+      if (miss) { toast(`請選擇「${miss.name}」`, true); return false; }
+      pickOptions.note = $('#onote', m).value.trim();
+    }
+  });
+  if (k !== 'ok') return;
+  const opts = []; groups.forEach(g => sel[g.id].sort((a, b) => a - b).forEach(i => opts.push({ g: g.name, name: g.options[i].name, price: +g.options[i].price || 0 })));
+  addLine(item, opts, qty, pickOptions.note);
+}
+async function sendOrder() {
+  const o = getOrder(V.tableId, false); if (!o) return;
+  const lines = o.lines.filter(l => !l.sent); if (!lines.length) return;
+  const ok = await printJob(kitchenJob(o, lines, o.sendCount ? '加點' : ''), '廚房單');
+  if (!ok && !(await ask('沒有印出廚房單', '要把這些品項標記為「已送單」嗎？（請記得口頭告知廚房）', '標記已送'))) return;
+  lines.forEach(l => { l.sent = true; l.sentAt = Date.now(); });
+  o.sendCount++; save(); render(); toast('已送單');
+}
+async function voidLine(id) {
+  const o = getOrder(V.tableId, false); const l = o && o.lines.find(x => x.id === id); if (!l) return;
+  if (!(await ask('退菜', `確定要退掉「${h(l.name)} x${l.qty}」嗎？會印一張退菜單給廚房。`, '退菜', 'warn'))) return;
+  await printJob(kitchenJob(o, [l], '退菜'), '退菜單');
+  o.lines = o.lines.filter(x => x.id !== id);
+  if (!o.lines.length) delete S.open[o.tableId];
+  save(); render();
+}
+async function moveTable() {
+  const o = getOrder(V.tableId, false); if (!o) return;
+  const empties = S.tables.filter(t => !S.open[t.id] || !S.open[t.id].lines.length);
+  if (!empties.length) return toast('沒有空桌可以換', true);
+  const k = await modal('換到哪一桌？', `<div class="chips">${empties.map(t => `<button class="chip" data-k="${t.id}">${h(t.name)}</button>`).join('')}</div>`, [{ k: 'no', t: '取消' }]);
+  if (!k || k === 'no') return;
+  const from = tableById(o.tableId).name, to = tableById(k).name;
+  delete S.open[o.tableId]; o.tableId = k; S.open[k] = o; V.tableId = k;
+  save(); render(); toast(`已從 ${from} 換到 ${to}`);
+}
+
+/* ---------------- 結帳 ---------------- */
+async function checkout() {
+  const o = getOrder(V.tableId, false); if (!o || !o.lines.length) return;
+  if (o.lines.some(l => !l.sent)) {
+    const k = await modal('還有品項沒送單', '<p style="margin:0">要先送單給廚房，還是直接結帳？</p>',
+      [{ k: 'no', t: '取消' }, { k: 'skip', t: '直接結帳' }, { k: 'send', t: '先送單', cls: 'warn' }]);
+    if (!k || k === 'no') return;
+    if (k === 'send') { await sendOrder(); if (o.lines.some(l => !l.sent)) return; }
+  }
+  const st = { method: 'cash', recv: '', discType: o.disc?.type || 'amt', discV: o.disc?.v ? String(o.disc.v) : '' };
+  const calc = () => {
+    const sub = orderSubtotal(o);
+    const dv = +st.discV || 0;
+    const disc = Math.min(sub, st.discType === 'pct' ? Math.round(sub * dv / 100) : dv);
+    const total = sub - disc; const recv = +st.recv || 0;
+    return { sub, disc, total, recv, change: recv - total };
+  };
+  const paint = m => {
+    const c = calc();
+    $('#bill', m).innerHTML = `<div><span>小計</span><span>${money(c.sub)}</span></div>
+      ${c.disc ? `<div><span>折扣</span><span>-${money(c.disc)}</span></div>` : ''}
+      <div class="tot"><span>應收</span><span>${money(c.total)}</span></div>
+      ${st.method === 'cash' ? `<div><span>收現</span><span>${st.recv ? money(c.recv) : '—'}</span></div>
+      <div class="chg"><span>找零</span><span>${st.recv && c.change >= 0 ? money(c.change) : st.recv ? '金額不足' : '—'}</span></div>` : '<div class="muted"><span>請用刷卡機刷卡後按完成</span></div>'}`;
+    $('#disp', m).textContent = st.recv ? money(+st.recv) : '';
+    $('#cashpad', m).style.display = st.method === 'cash' ? '' : 'none';
+    m.querySelectorAll('[data-pm]').forEach(b => b.classList.toggle('on', b.dataset.pm === st.method));
+    m.querySelectorAll('[data-dt]').forEach(b => b.classList.toggle('on', b.dataset.dt === st.discType));
+  };
+  const lines = o.lines.map(l => `<div><span>${h(l.name)} x${l.qty}${l.opts.length ? `<br><small class="muted">${h(optText(l))}</small>` : ''}</span><span>${money(lineTotal(l))}</span></div>`).join('');
+  const t = tableById(o.tableId);
+  const k = await modal(`結帳　${t.name}　#${pad2(o.no)}`, `
+    <div class="co">
+      <div>
+        <div class="bill" style="max-height:220px;overflow:auto;margin-bottom:10px">${lines}</div>
+        <div class="grp"><div class="gt">折扣</div><div class="row" style="align-items:center">
+          <div class="chips" style="flex:0 0 auto"><button class="chip" data-dt="amt">折 $</button><button class="chip" data-dt="pct">打 %off</button></div>
+          <input id="dv" inputmode="numeric" placeholder="0" value="${h(st.discV)}" style="padding:10px;border:1px solid var(--line);border-radius:10px"></div></div>
+        <div class="bill" id="bill"></div>
+      </div>
+      <div>
+        <div class="chips" style="margin-bottom:12px"><button class="chip" data-pm="cash" style="flex:1">現金</button><button class="chip" data-pm="card" style="flex:1">信用卡</button></div>
+        <div id="cashpad">
+          <div class="disp" id="disp"></div>
+          <div class="chips" style="margin-bottom:8px"><button class="chip" data-quick="exact">剛好</button><button class="chip" data-quick="100">$100</button><button class="chip" data-quick="500">$500</button><button class="chip" data-quick="1000">$1000</button></div>
+          <div class="keypad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫'].map(x => `<button data-kp="${x}">${x}</button>`).join('')}</div>
+        </div>
+      </div>
+    </div>`, [{ k: 'no', t: '取消' }, { k: 'ok', t: '完成結帳', cls: 'pri big' }], {
+    wide: true, dismiss: false,
+    onOpen: m => {
+      paint(m);
+      $('#dv', m).addEventListener('input', e => { st.discV = e.target.value.replace(/\D/g, ''); paint(m); });
+      m.addEventListener('click', e => {
+        const b = e.target.closest('[data-pm],[data-dt],[data-quick],[data-kp]'); if (!b) return;
+        if (b.dataset.pm) st.method = b.dataset.pm;
+        if (b.dataset.dt) st.discType = b.dataset.dt;
+        if (b.dataset.quick) st.recv = b.dataset.quick === 'exact' ? String(calc().total) : b.dataset.quick;
+        if (b.dataset.kp) { const x = b.dataset.kp; st.recv = x === '⌫' ? st.recv.slice(0, -1) : (st.recv + x).replace(/^0+/, '').slice(0, 7); }
+        paint(m);
+      });
+    },
+    onBtn: k => {
+      if (k !== 'ok') return;
+      const c = calc();
+      if (st.discType === 'pct' && (+st.discV || 0) > 100) { toast('折扣不能超過 100%', true); return false; }
+      if (st.method === 'cash') { if (!st.recv) st.recv = String(c.total); else if (c.change < 0) { toast('收現金額不足', true); return false; } }
+    }
+  });
+  if (k !== 'ok') { o.disc = st.discV ? { type: st.discType, v: +st.discV } : null; save(); return; }
+  const c = calc();
+  const rec = {
+    id: o.id, no: o.no, tableId: o.tableId, tableName: t.name, openedAt: o.openedAt, closedAt: Date.now(),
+    lines: o.lines, subtotal: c.sub, discount: c.disc, total: c.total,
+    pay: st.method === 'cash' ? { method: 'cash', received: c.recv || c.total, change: (c.recv || c.total) - c.total } : { method: 'card' },
+  };
+  S.closed.push(rec); delete S.open[o.tableId]; save();
+  navigate(() => { V.screen = 'floor'; render(); });
+  await printJob(receiptJob(rec), '收據');
+  toast(rec.pay.method === 'cash' ? `結帳完成，找零 ${money(rec.pay.change)}` : '結帳完成');
+}
+
+/* ---------------- 報表 ---------------- */
+function dayRecords(day) { return S.closed.filter(r => dayKey(r.closedAt) === day); }
+function stats(recs) {
+  const live = recs.filter(r => !r.void);
+  const s = { n: live.length, total: 0, cash: 0, card: 0, disc: 0, items: {} };
+  for (const r of live) {
+    s.total += r.total; s.disc += r.discount; s[r.pay.method] += r.total;
+    for (const l of r.lines) { const it = s.items[l.name] || (s.items[l.name] = { q: 0, amt: 0 }); it.q += l.qty; it.amt += lineTotal(l); }
+  }
+  return s;
+}
+function renderReports() {
+  const recs = dayRecords(V.reportDay).sort((a, b) => b.closedAt - a.closedAt);
+  const s = stats(recs);
+  const items = Object.entries(s.items).sort((a, b) => b[1].q - a[1].q);
+  const lb = S.lastBackup ? fmtTime(S.lastBackup) : '從未備份';
+  $('#main').innerHTML = `<div class="page scroll">
+    <div class="row" style="flex:0;align-items:center">
+      <input type="date" id="rday" value="${V.reportDay}" style="flex:0 0 auto;padding:10px;border:1px solid var(--line);border-radius:10px">
+      <span class="muted" style="flex:1">上次備份：${lb}</span>
+      <button class="btn" style="flex:0" data-act="backup">匯出備份</button>
+      <button class="btn pri" style="flex:0" data-act="printDaily">列印日結單</button>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="k">營業額</div><div class="v">${money(s.total)}</div></div>
+      <div class="card"><div class="k">單數</div><div class="v">${s.n}</div></div>
+      <div class="card"><div class="k">平均每單</div><div class="v">${money(s.n ? s.total / s.n : 0)}</div></div>
+      <div class="card"><div class="k">現金</div><div class="v">${money(s.cash)}</div></div>
+      <div class="card"><div class="k">信用卡</div><div class="v">${money(s.card)}</div></div>
+      <div class="card"><div class="k">折扣總額</div><div class="v">${money(s.disc)}</div></div>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <div class="box"><h4>品項銷量</h4>${items.length ? `<table class="t"><tr><th>品項</th><th class="n">數量</th><th class="n">金額</th></tr>
+        ${items.map(([n, v]) => `<tr><td>${h(n)}</td><td class="n">${v.q}</td><td class="n">${money(v.amt)}</td></tr>`).join('')}</table>` : '<div class="muted">這天沒有銷售</div>'}</div>
+      <div class="box"><h4>訂單</h4>${recs.length ? `<table class="t"><tr><th>單號</th><th>桌</th><th>時間</th><th>付款</th><th class="n">金額</th><th></th></tr>
+        ${recs.map(r => `<tr class="${r.void ? 'void' : ''}"><td>#${pad2(r.no)}</td><td>${h(r.tableName)}</td><td>${hm(r.closedAt)}</td><td>${r.pay.method === 'cash' ? '現金' : '信用卡'}</td><td class="n">${money(r.total)}</td>
+        <td class="n">${r.void ? '<span class="muted" style="text-decoration:none">已作廢</span>' : `<button class="mini" data-act="reprint" data-id="${r.id}">補印</button> <button class="mini" data-act="voidRec" data-id="${r.id}">作廢</button>`}</td></tr>`).join('')}</table>` : '<div class="muted">這天沒有訂單</div>'}</div>
+    </div></div>`;
+  $('#rday').addEventListener('change', e => { V.reportDay = e.target.value || dayKey(Date.now()); render(); });
+}
+function dailyJob(day) {
+  const s = stats(dayRecords(day));
+  const job = [J.align('center'), J.txt(S.settings.shopName, { w: 2, h: 2, b: true }), J.txt('日結單 ' + day.replace(/-/g, '/')), J.feed(1), J.align('left')];
+  job.push(J.txt(lr('列印時間', fmtTime(Date.now()))), J.txt(rule()));
+  job.push(J.txt(lr('營業額', money(s.total)), { b: true }), J.txt(lr('單數', String(s.n))), J.txt(lr('現金', money(s.cash))), J.txt(lr('信用卡', money(s.card))), J.txt(lr('折扣總額', money(s.disc))));
+  job.push(J.txt(rule()), J.txt('品項銷量', { b: true }));
+  Object.entries(s.items).sort((a, b) => b[1].q - a[1].q).forEach(([n, v]) => job.push(J.txt(lr(n, `x${v.q}  ${padL(money(v.amt), 8)}`))));
+  job.push(J.txt(rule()), J.feed(2), J.cut());
+  return job;
+}
+
+/* ---------------- 後台 ---------------- */
+function renderAdmin() {
+  const tabs = [['menu', '菜單'], ['groups', '口味／加料'], ['floor', '桌位圖'], ['settings', '設定與備份']];
+  $('#main').innerHTML = `<div class="admin"><div class="side" data-lens="side"><span class="lens"></span>${tabs.map(([k, t]) => `<button class="${V.admin === k ? 'on' : ''}" data-act="adminTab" data-v="${k}">${t}</button>`).join('')}</div>
+    <div class="page scroll" id="ap"></div></div>`;
+  ({ menu: adminMenu, groups: adminGroups, floor: adminFloor, settings: adminSettings })[V.admin]();
+}
+function adminMenu() {
+  if (!V.adminCat || !S.categories.find(c => c.id === V.adminCat)) V.adminCat = S.categories[0]?.id;
+  const items = S.items.filter(i => i.catId === V.adminCat);
+  $('#ap').innerHTML = `<div class="row" style="align-items:flex-start">
+    <div class="box" style="flex:none;width:260px"><h4>分類</h4><div class="cats">${S.categories.map((c, i) => `<div class="catrow ${c.id === V.adminCat ? 'on' : ''}" data-act="adminCat" data-id="${c.id}">
+      <span class="cn">${h(c.name)}</span><button class="mini" data-act="catUp" data-id="${c.id}" ${i ? '' : 'disabled'}>↑</button><button class="mini" data-act="catEdit" data-id="${c.id}">改</button></div>`).join('')}</div>
+      <button class="btn" style="margin-top:10px;width:100%" data-act="catAdd">＋ 新增分類</button></div>
+    <div class="box"><div class="row" style="align-items:center;margin-bottom:8px"><h4 style="margin:0">品項</h4><button class="btn pri" style="flex:0" data-act="itemEdit" data-id="">＋ 新增品項</button></div>
+      ${items.length ? `<table class="t"><tr><th>品名</th><th class="n">價格</th><th>選項</th><th>售完</th><th></th></tr>${items.map((it, i) => `<tr>
+        <td><b>${h(it.name)}</b></td><td class="n">${money(it.price)}</td><td class="muted">${it.groups.map(g => groupById(g)?.name).filter(Boolean).join('、') || '—'}</td>
+        <td><div class="switch ${it.soldOut ? 'on' : ''}" data-act="soldOut" data-id="${it.id}"></div></td>
+        <td class="n"><button class="mini" data-act="itemUp" data-id="${it.id}" ${i ? '' : 'disabled'}>↑</button> <button class="mini" data-act="itemEdit" data-id="${it.id}">編輯</button></td></tr>`).join('')}</table>` : '<div class="muted">這個分類還沒有品項</div>'}</div></div>`;
+}
+async function editItem(id) {
+  const it = id ? itemById(id) : { id: uid(), catId: V.adminCat, name: '', price: 0, soldOut: false, groups: [] };
+  if (!it.catId) return toast('請先新增分類', true);
+  const sel = new Set(it.groups);
+  const k = await modal(id ? '編輯品項' : '新增品項', `
+    <div class="fld"><label>品名</label><input id="in" value="${h(it.name)}"></div>
+    <div class="fld"><label>價格</label><input id="ip" inputmode="numeric" value="${it.price || ''}"></div>
+    <div class="fld"><label>分類</label><select id="ic">${S.categories.map(c => `<option value="${c.id}" ${c.id === it.catId ? 'selected' : ''}>${h(c.name)}</option>`).join('')}</select></div>
+    <div class="grp"><div class="gt">口味／加料<small>點這個品項時要跳出哪些選擇</small></div>
+      <div class="chips">${S.optionGroups.map(g => `<button class="chip ${sel.has(g.id) ? 'on' : ''}" data-gid="${g.id}">${h(g.name)}</button>`).join('') || '<span class="muted">先到「口味／加料」建立選項群組</span>'}</div></div>`,
+    [...(id ? [{ k: 'del', t: '刪除', cls: 'bad' }] : []), { k: 'no', t: '取消' }, { k: 'ok', t: '儲存', cls: 'pri' }], {
+    onOpen: m => m.addEventListener('click', e => { const c = e.target.closest('[data-gid]'); if (!c) return; sel.has(c.dataset.gid) ? sel.delete(c.dataset.gid) : sel.add(c.dataset.gid); c.classList.toggle('on'); }),
+    onBtn: (k, m) => {
+      if (k !== 'ok') return;
+      const name = $('#in', m).value.trim(), price = parseInt($('#ip', m).value, 10);
+      if (!name) { toast('請輸入品名', true); return false; }
+      if (!(price >= 0)) { toast('請輸入價格', true); return false; }
+      Object.assign(it, { name, price, catId: $('#ic', m).value, groups: S.optionGroups.filter(g => sel.has(g.id)).map(g => g.id) });
+    }
+  });
+  if (k === 'ok') { if (!id) S.items.push(it); save(); render(); }
+  if (k === 'del' && await ask('刪除品項', `確定刪除「${h(it.name)}」？（已結帳的紀錄不受影響）`, '刪除', 'warn')) { S.items = S.items.filter(x => x.id !== id); save(); render(); }
+}
+function adminGroups() {
+  $('#ap').innerHTML = `<div class="box"><div class="row" style="align-items:center;margin-bottom:8px"><h4 style="margin:0">口味／加料群組</h4><button class="btn pri" style="flex:0" data-act="groupEdit" data-id="">＋ 新增群組</button></div>
+    <p class="muted" style="margin-top:0">建立後，到「菜單」編輯品項時勾選要套用的群組。例如「辣度」套用到所有麵類。</p>
+    ${S.optionGroups.length ? `<table class="t"><tr><th>群組</th><th>規則</th><th>選項</th><th>使用品項</th><th></th></tr>${S.optionGroups.map(g => `<tr>
+      <td><b>${h(g.name)}</b></td><td class="muted">${g.required ? '必選' : '可不選'}・${g.multi ? '可複選' : '單選'}</td>
+      <td>${g.options.map(o => h(o.name) + (o.price ? ` <span class="muted">+${o.price}</span>` : '')).join('、')}</td>
+      <td class="n">${S.items.filter(i => i.groups.includes(g.id)).length}</td>
+      <td class="n"><button class="mini" data-act="groupEdit" data-id="${g.id}">編輯</button></td></tr>`).join('')}</table>` : '<div class="muted">還沒有群組</div>'}</div>`;
+}
+async function editGroup(id) {
+  const g = id ? JSON.parse(JSON.stringify(groupById(id))) : { id: uid(), name: '', required: false, multi: false, options: [{ name: '', price: 0 }] };
+  const rows = () => g.options.map((o, i) => `<div class="optrow"><input data-on="${i}" placeholder="選項名稱" value="${h(o.name)}"><input data-op="${i}" inputmode="numeric" placeholder="加價" value="${o.price || ''}"><button class="mini" data-rm="${i}">✕</button></div>`).join('');
+  const sync = m => { m.querySelectorAll('[data-on]').forEach(el => g.options[+el.dataset.on].name = el.value.trim()); m.querySelectorAll('[data-op]').forEach(el => g.options[+el.dataset.op].price = parseInt(el.value, 10) || 0); };
+  const k = await modal(id ? '編輯群組' : '新增群組', `
+    <div class="fld"><label>群組名稱</label><input id="gn" value="${h(g.name)}" placeholder="例如：辣度、加料、甜度"></div>
+    <label class="check"><input type="checkbox" id="greq" ${g.required ? 'checked' : ''}> 必選（沒選不能加入）</label>
+    <label class="check"><input type="checkbox" id="gmul" ${g.multi ? 'checked' : ''}> 可複選（例如加料）</label>
+    <div class="grp"><div class="gt">選項<small>加價填 0 或空白代表不加價</small></div><div id="orows">${rows()}</div>
+    <button class="btn" data-addopt="1">＋ 新增選項</button></div>`,
+    [...(id ? [{ k: 'del', t: '刪除', cls: 'bad' }] : []), { k: 'no', t: '取消' }, { k: 'ok', t: '儲存', cls: 'pri' }], {
+    onOpen: m => m.addEventListener('click', e => {
+      if (e.target.closest('[data-addopt]')) { sync(m); g.options.push({ name: '', price: 0 }); $('#orows', m).innerHTML = rows(); }
+      const r = e.target.closest('[data-rm]'); if (r) { sync(m); g.options.splice(+r.dataset.rm, 1); $('#orows', m).innerHTML = rows(); }
+    }),
+    onBtn: (k, m) => {
+      if (k !== 'ok') return;
+      sync(m); g.name = $('#gn', m).value.trim(); g.required = $('#greq', m).checked; g.multi = $('#gmul', m).checked;
+      g.options = g.options.filter(o => o.name);
+      if (!g.name) { toast('請輸入群組名稱', true); return false; }
+      if (!g.options.length) { toast('至少要有一個選項', true); return false; }
+    }
+  });
+  if (k === 'ok') { if (id) S.optionGroups[S.optionGroups.findIndex(x => x.id === id)] = g; else S.optionGroups.push(g); save(); render(); }
+  if (k === 'del' && await ask('刪除群組', `確定刪除「${h(g.name)}」？會同時從所有品項移除。`, '刪除', 'warn')) {
+    S.optionGroups = S.optionGroups.filter(x => x.id !== id); S.items.forEach(i => i.groups = i.groups.filter(x => x !== id)); save(); render();
+  }
+}
+function adminFloor() {
+  const t = tableById(V.editTable);
+  const tables = S.tables.filter(x => x.areaId === V.area);
+  const sizeCtl = t ? (t.shape === 'round'
+    ? `<div class="range"><span>大小</span><input type="range" min="4" max="40" step="0.5" value="${t.w}" data-size="w"><b id="vw">${t.w}</b></div>`
+    : `<div class="range"><span>寬度</span><input type="range" min="4" max="60" step="0.5" value="${t.w}" data-size="w"><b id="vw">${t.w}</b></div>
+       <div class="range"><span>高度</span><input type="range" min="6" max="80" step="0.5" value="${t.h}" data-size="h"><b id="vh">${t.h}</b></div>`) : '';
+  $('#ap').innerHTML = `
+    <div class="row" style="flex:0;align-items:center"><div class="tabs" data-lens="earea" style="padding:4px 2px;flex:1"><span class="lens dark"></span>${areaTabs('editArea')}<button data-act="areaAdd">＋ 新增區域</button></div>
+      <button class="btn" style="flex:0" data-act="areaEdit">區域改名／刪除</button></div>
+    <div class="row" style="flex:1;min-height:440px;align-items:stretch">
+      <div class="floorbox" style="flex:1"><div class="floor" id="efloor">${tables.map(x => tableTile(x, true)).join('')}</div></div>
+      <div class="box" style="flex:none;width:250px;overflow:auto">
+        <button class="btn pri" style="width:100%;margin-bottom:10px" data-act="tableAdd">＋ 新增桌子</button>
+        <div class="row" style="margin-bottom:16px"><button class="btn" data-act="scaleAll" data-f="0.9">全部縮小</button><button class="btn" data-act="scaleAll" data-f="1.1">全部放大</button></div>
+        ${t ? `<h4>桌子：${h(t.name)}</h4>
+          <div class="fld"><label>桌名</label><input id="tn" value="${h(t.name)}"></div>
+          <div class="fld"><label>形狀</label><div class="chips">${[['sq', '方桌'], ['rect', '長桌'], ['round', '圓桌']].map(([k, n]) => `<button class="chip ${t.shape === k ? 'on' : ''}" data-act="tableShape" data-v="${k}">${n}</button>`).join('')}</div></div>
+          <div class="fld"><label>尺寸（也可以直接拖曳桌子右下角的圓點）</label></div>${sizeCtl}
+          <button class="btn bad" style="width:100%;margin-top:6px" data-act="tableDel">刪除這張桌子</button>`
+          : '<p class="muted">按住桌子拖曳來擺位置；點一下桌子後，拖曳右下角的圓點就能縮放，也可以用滑桿微調。</p>'}
+      </div></div>`;
+  const tn = $('#tn'); if (tn) tn.addEventListener('change', e => { const v = e.target.value.trim(); if (v) { t.name = v; save(); render(); } });
+  $('#ap').querySelectorAll('[data-size]').forEach(r => {
+    r.addEventListener('input', () => {
+      const v = +r.value, el = $(`#efloor [data-id="${t.id}"]`);
+      if (r.dataset.size === 'w') {
+        t.w = Math.min(v, 100 - t.x); if (t.shape === 'round') t.h = Math.min(+(t.w * FLOOR_RATIO).toFixed(1), 100 - t.y);
+        $('#vw').textContent = t.w;
+      } else { t.h = Math.min(v, 100 - t.y); $('#vh').textContent = t.h; }
+      el.style.width = t.w + '%'; el.style.height = t.h + '%';
+    });
+    r.addEventListener('change', save);
+  });
+  bindDrag($('#efloor'));
+}
+function bindDrag(floor) {
+  let op = null;
+  floor.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.tbl'); if (!el) return;
+    const r = floor.getBoundingClientRect(), er = el.getBoundingClientRect(), t = tableById(el.dataset.id);
+    op = { el, t, r, er, mode: e.target.closest('.rh') ? 'resize' : 'move', dx: e.clientX - er.left, dy: e.clientY - er.top, moved: false };
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  floor.addEventListener('pointermove', e => {
+    if (!op) return;
+    const { r, el, t } = op;
+    if (!op.moved) { op.moved = true; el.classList.add('dragging'); }
+    const pct = (v, total) => Math.round(v / total * 1000) / 10;
+    if (op.mode === 'move') {
+      const x = Math.min(Math.max(0, e.clientX - r.left - op.dx), r.width - el.offsetWidth);
+      const y = Math.min(Math.max(0, e.clientY - r.top - op.dy), r.height - el.offsetHeight);
+      t.x = pct(x, r.width); t.y = pct(y, r.height);
+      el.style.left = t.x + '%'; el.style.top = t.y + '%';
+    } else {
+      const left = op.er.left - r.left, top = op.er.top - r.top;
+      let w = Math.min(Math.max(r.width * 0.04, e.clientX - op.er.left), r.width - left);
+      let hh = Math.min(Math.max(r.height * 0.06, e.clientY - op.er.top), r.height - top);
+      if (t.shape === 'round') { w = Math.min(w, r.height - top); hh = w; } // 圓桌保持正圓
+      t.w = pct(w, r.width); t.h = pct(hh, r.height);
+      el.style.width = t.w + '%'; el.style.height = t.h + '%';
+    }
+  });
+  const end = () => {
+    if (!op) return;
+    const { t, moved } = op; op = null;
+    if (moved) save();
+    V.editTable = t.id; render();
+  };
+  floor.addEventListener('pointerup', end); floor.addEventListener('pointercancel', end);
+}
+function adminSettings() {
+  const st = S.settings;
+  $('#ap').innerHTML = `<div class="row" style="align-items:flex-start">
+    <div class="box">
+      <h4>店家與出單機</h4>
+      <div class="fld"><label>店名（印在收據上）</label><input data-set="shopName" value="${h(st.shopName)}"></div>
+      <div class="fld"><label>出單機 IP</label><input data-set="printerIp" value="${h(st.printerIp)}" placeholder="例如 192.168.1.50（留空＝預覽模式）" inputmode="decimal">
+        <div class="hint">出單機關機 → 按住進紙鍵開機，會印出自我測試單，第二張倒數第三行就是 IP。建議在路由器把這個 IP 設成固定。</div></div>
+      <label class="check"><input type="checkbox" data-set="https" ${st.https ? 'checked' : ''}> 用 HTTPS 連線（App 放在 HTTPS 網址上時一定要勾）</label>
+      <div class="fld"><label>文字編碼</label><select data-set="codepage">
+        <option value="utf8" ${st.codepage === 'utf8' ? 'selected' : ''}>UTF-8（建議）</option>
+        <option value="" ${!st.codepage ? 'selected' : ''}>不指定（用出單機預設）</option></select>
+        <div class="hint">測試列印時中文變亂碼，就換另一個選項再試。</div></div>
+      <label class="check"><input type="checkbox" data-set="kitchenBig" ${st.kitchenBig ? 'checked' : ''}> 廚房單桌號用特大字</label>
+      <label class="check"><input type="checkbox" data-set="openDrawer" ${st.openDrawer ? 'checked' : ''}> 現金結帳時自動開錢櫃（有接錢櫃才需要）</label>
+      <div class="row"><button class="btn" data-act="testPreview">看測試單預覽</button><button class="btn pri" data-act="testPrint">測試列印</button></div>
+    </div>
+    <div class="box">
+      <h4>資料備份</h4>
+      <p class="muted" style="margin-top:0">所有資料只存在這台 iPad 裡。請從主畫面的 App 圖示打開來用，並定期匯出備份（建議每天日結時）。</p>
+      <p>上次備份：<b>${S.lastBackup ? fmtTime(S.lastBackup) : '從未備份'}</b></p>
+      <div class="row"><button class="btn pri" data-act="backup">匯出備份</button><button class="btn" data-act="restore">從備份還原</button></div>
+      <input type="file" id="rfile" accept=".json,application/json" style="display:none">
+      <h4 style="margin-top:22px">危險操作</h4>
+      <div class="row"><button class="btn bad" data-act="wipeSales">清除所有營業紀錄</button><button class="btn bad" data-act="wipeAll">全部重設</button></div>
+    </div></div>`;
+  $('#ap').querySelectorAll('[data-set]').forEach(el => el.addEventListener('change', () => {
+    const k = el.dataset.set; st[k] = el.type === 'checkbox' ? el.checked : el.value.trim();
+    if (k === 'printerIp') printerOK = null;
+    save(); render();
+  }));
+  $('#rfile').addEventListener('change', restore);
+}
+function testJob() {
+  return [J.align('center'), J.txt(S.settings.shopName, { w: 2, h: 2, b: true }), J.txt('出單機測試'), J.feed(1), J.align('left'),
+  J.txt(' 桌號 A1 ', { w: 3, h: 3, b: true, inv: true }), J.txt(lr('繁體中文測試：牛肉麵', 'x2')), J.txt(lr('English 123', '$1,234')), J.txt(rule()), J.txt(fmtTime(Date.now())), J.feed(2), J.cut()];
+}
+async function backup() {
+  const name = `pos-backup-${dayKey(Date.now())}.json`;
+  S.lastBackup = Date.now();
+  const blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
+  const file = new File([blob], name, { type: 'application/json' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); }
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    save(); render(); toast('備份檔已匯出，請存到「檔案」或傳到雲端');
+  } catch (e) { S.lastBackup = 0; if (e.name !== 'AbortError') toast('匯出失敗：' + e.message, true); }
+}
+async function restore(e) {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d || !Array.isArray(d.items) || !Array.isArray(d.tables)) throw new Error('不是這個 POS 的備份檔');
+    if (!(await ask('從備份還原', `會用「${h(f.name)}」覆蓋目前所有資料（包含進行中的桌）。確定嗎？`, '覆蓋還原', 'warn'))) return;
+    S = migrate(d); save(); V.area = S.areas[0]?.id; render(); toast('已還原');
+  } catch (err) { toast('還原失敗：' + err.message, true); }
+}
+
+/* ---------------- 事件 ---------------- */
+const ACT = {
+  go: b => { if (V.screen === b.dataset.v) return; navigate(() => { V.screen = b.dataset.v; render(); }); },
+  area: b => { V.area = b.dataset.id; render(); },
+  openTable: b => navigate(() => { V.tableId = b.dataset.id; V.screen = 'order'; render(); }),
+  cat: b => { V.cat = b.dataset.id; render(); },
+  addItem: b => { const it = itemById(b.dataset.id); if (it.soldOut) return toast(`「${it.name}」已售完`, true); it.groups.length ? pickOptions(it) : addLine(it, [], 1, ''); },
+  qty: b => {
+    const o = getOrder(V.tableId, false); const l = o.lines.find(x => x.id === b.dataset.id);
+    l.qty += +b.dataset.d; if (l.qty <= 0) o.lines = o.lines.filter(x => x !== l);
+    if (!o.lines.length) delete S.open[o.tableId]; save(); render();
+  },
+  voidLine: b => voidLine(b.dataset.id),
+  send: () => sendOrder(),
+  checkout: () => checkout(),
+  moveTable: () => moveTable(),
+  reprint: b => { const r = S.closed.find(x => x.id === b.dataset.id); printJob(receiptJob(r, true), '補印收據'); },
+  voidRec: async b => { const r = S.closed.find(x => x.id === b.dataset.id); if (await ask('作廢訂單', `確定作廢 #${pad2(r.no)}（${money(r.total)}）？作廢後不算進營業額。`, '作廢', 'warn')) { r.void = true; r.voidAt = Date.now(); save(); render(); } },
+  printDaily: () => printJob(dailyJob(V.reportDay), '日結單'),
+  backup: () => backup(),
+  restore: () => $('#rfile').click(),
+  adminTab: b => navigate(() => { V.admin = b.dataset.v; V.editTable = null; render(); }),
+  adminCat: (b, e) => { if (e.target.closest('button')) return; V.adminCat = b.dataset.id; render(); },
+  catAdd: async () => { const n = await prompt2('新增分類', '分類名稱'); if (n) { const c = { id: uid(), name: n }; S.categories.push(c); V.adminCat = c.id; save(); render(); } },
+  catEdit: async b => {
+    const c = S.categories.find(x => x.id === b.dataset.id);
+    const k = await modal('分類', `<div class="fld"><label>分類名稱</label><input id="cn" value="${h(c.name)}"></div>`, [{ k: 'del', t: '刪除分類', cls: 'bad' }, { k: 'no', t: '取消' }, { k: 'ok', t: '儲存', cls: 'pri' }], { onBtn: (k, m) => { catEdit.v = $('#cn', m).value.trim(); } });
+    if (k === 'ok' && catEdit.v) { c.name = catEdit.v; save(); render(); }
+    if (k === 'del') {
+      if (S.items.some(i => i.catId === c.id)) return toast('分類裡還有品項，請先移走或刪除', true);
+      S.categories = S.categories.filter(x => x !== c); save(); render();
+    }
+  },
+  catUp: b => { const i = S.categories.findIndex(x => x.id === b.dataset.id); if (i > 0) { [S.categories[i - 1], S.categories[i]] = [S.categories[i], S.categories[i - 1]]; save(); render(); } },
+  itemEdit: b => editItem(b.dataset.id),
+  itemUp: b => {
+    const it = itemById(b.dataset.id); const same = S.items.filter(i => i.catId === it.catId); const k = same.indexOf(it); if (k <= 0) return;
+    const a = S.items.indexOf(same[k - 1]), c = S.items.indexOf(it); [S.items[a], S.items[c]] = [S.items[c], S.items[a]]; save(); render();
+  },
+  soldOut: b => { const it = itemById(b.dataset.id); it.soldOut = !it.soldOut; save(); render(); },
+  groupEdit: b => editGroup(b.dataset.id),
+  editArea: b => { V.area = b.dataset.id; V.editTable = null; render(); },
+  areaAdd: async () => { const n = await prompt2('新增區域', '區域名稱（例如：二樓、戶外）'); if (n) { const a = { id: uid(), name: n }; S.areas.push(a); V.area = a.id; save(); render(); } },
+  areaEdit: async () => {
+    const a = S.areas.find(x => x.id === V.area); if (!a) return;
+    const k = await modal('區域', `<div class="fld"><label>區域名稱</label><input id="an" value="${h(a.name)}"></div>`, [{ k: 'del', t: '刪除區域', cls: 'bad' }, { k: 'no', t: '取消' }, { k: 'ok', t: '儲存', cls: 'pri' }], { onBtn: (k, m) => { ACT.areaEdit.v = $('#an', m).value.trim(); } });
+    if (k === 'ok' && ACT.areaEdit.v) { a.name = ACT.areaEdit.v; save(); render(); }
+    if (k === 'del') {
+      if (S.areas.length < 2) return toast('至少要保留一個區域', true);
+      if (S.tables.some(t => t.areaId === a.id && S.open[t.id])) return toast('這區還有用餐中的桌子', true);
+      if (!(await ask('刪除區域', `刪除「${h(a.name)}」和裡面所有桌子？`, '刪除', 'warn'))) return;
+      S.tables = S.tables.filter(t => t.areaId !== a.id); S.areas = S.areas.filter(x => x !== a); V.area = S.areas[0].id; save(); render();
+    }
+  },
+  pickTable: () => { }, // 由拖曳處理
+  tableAdd: async () => {
+    const n = await prompt2('新增桌子', '桌名（例如 A7）'); if (!n) return;
+    const t = { id: uid(), areaId: V.area, name: n, x: 4, y: 4, shape: 'sq' }; S.tables.push(t); V.editTable = t.id; save(); render();
+  },
+  tableShape: b => {
+    const t = tableById(V.editTable); t.shape = b.dataset.v;
+    if (t.shape === 'round') t.h = Math.min(+(t.w * FLOOR_RATIO).toFixed(1), 100 - t.y);
+    if (t.shape === 'rect' && t.w < t.h / FLOOR_RATIO * 1.5) t.w = Math.min(+(t.h / FLOOR_RATIO * 1.8).toFixed(1), 100 - t.x);
+    save(); render();
+  },
+  scaleAll: b => {
+    const f = +b.dataset.f;
+    S.tables.filter(t => t.areaId === V.area).forEach(t => {
+      const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+      t.w = Math.max(3, Math.min(60, t.w * f)); t.h = Math.max(4, Math.min(80, t.h * f));
+      t.x = Math.min(Math.max(0, cx - t.w / 2), 100 - t.w); t.y = Math.min(Math.max(0, cy - t.h / 2), 100 - t.h);
+      ['x', 'y', 'w', 'h'].forEach(k => t[k] = Math.round(t[k] * 10) / 10);
+    });
+    save(); render();
+  },
+  tableDel: async () => {
+    const t = tableById(V.editTable); if (S.open[t.id]) return toast('這桌還在用餐中，不能刪除', true);
+    if (await ask('刪除桌子', `確定刪除「${h(t.name)}」？`, '刪除', 'warn')) { S.tables = S.tables.filter(x => x !== t); V.editTable = null; save(); render(); }
+  },
+  testPreview: () => showPreview(testJob(), '測試單預覽'),
+  testPrint: async () => { if (!S.settings.printerIp) return toast('請先填出單機 IP', true); if (await printJob(testJob(), '測試單')) toast('測試單已送出'); },
+  wipeSales: async () => { if (await ask('清除營業紀錄', '會刪除所有已結帳訂單（菜單、桌位保留）。建議先匯出備份。', '清除', 'warn')) { S.closed = []; save(); render(); } },
+  wipeAll: async () => { if (await ask('全部重設', '會刪除所有資料並回到範例菜單。建議先匯出備份。', '重設', 'warn')) { S = migrate(seed()); V.area = S.areas[0].id; save(); render(); } },
+};
+const catEdit = {};
+document.addEventListener('click', e => {
+  if (e.target.closest('.mask')) return; // 對話框自己處理
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const f = ACT[b.dataset.act]; if (f) f(b, e);
+});
+// 每 30 秒更新時間與桌位用餐時間
+setInterval(() => {
+  const c = $('#clock'); if (c) c.textContent = hm(Date.now());
+  if (V.screen === 'floor' && !document.querySelector('.mask')) { renderFloor(); afterRender(); }
+}, 30000);
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+render();
+</script>
+</body>
+</html>
